@@ -4,10 +4,6 @@ settings:
   CURRENT_PROJECT_VERSION: 1
 options:
   bundleIdPrefix: com.adagop
-packages:
-  netfox:
-    url: https://github.com/kasketis/netfox.git
-    from: 1.21.0
 targets:
   Impulsum:
     type: application
@@ -17,8 +13,6 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.adagop.Impulsum
       INFOPLIST_FILE: Impulsum/Info.plist
-    dependencies:
-        - package: netfox
 schemes:
   Impulsum:
     build:
