@@ -20,6 +20,14 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.adagop.Impulsum
       INFOPLIST_FILE: Impulsum/Info.plist
+    preBuildScripts:
+      - script: |
+          ./Scripts/SwiftLint/swiftlint lint --quiet
+        name: Swiftlint
+    dependencies:
+      - package: FocusEntity
+      - package: RealityGeometries
+
 schemes:
   Impulsum:
     build:
