@@ -1,0 +1,72 @@
+# SwiftLint Configuration
+
+# Exclude files or directories from linting
+excluded:
+  - ./Impulsum/Impulsum_appApp.swift
+  - Carthage
+  - Pods
+  - Scripts
+  - fastlane
+  - Impulsum-ARTests
+  - Impulsum-ARUITests
+
+# Customizable rules
+line_length:
+  warning: 120  # Warnings for lines longer than 120 characters
+  error: 140    # Errors for lines longer than 140 characters
+  ignores_comments: true
+  ignores_function_declarations: true
+  ignores_urls: true
+
+type_body_length:
+  warning: 200  # Warning for type bodies longer than 200 lines
+  error: 250    # Error for type bodies longer than 250 lines
+
+file_length:
+  warning: 400  # Warning for files longer than 400 lines
+  error: 600    # Error for files longer than 600 lines
+  ignore_comment_only_lines: true
+
+function_body_length:
+  warning: 40   # Warning for function bodies longer than 40 lines
+  error: 75     # Error for function bodies longer than 75 lines
+
+# Force unwrapping should be avoided for safety
+force_unwrapping: error
+force_cast: error
+force_try: warning
+
+# Best practices
+unused_optional_binding: warning
+redundant_optional_initialization: warning
+implicit_return: warning
+
+# Style rules
+trailing_whitespace:
+  severity: warning
+
+identifier_name:
+  min_length:
+    error: 3   # Error if identifier name is shorter than 3 characters
+  max_length:
+    warning: 40  # Warning if identifier name is longer than 40 characters
+
+closure_spacing:
+  enable: true  # Enforce consistent closure spacing
+
+# Comment-related rules
+todo:
+  warning: true
+fixme:
+  warning: true
+
+# Performance and readability
+redundant_string_enum_value: warning
+redundant_nil_coalescing: warning
+
+# Disable certain rules
+disabled_rules:
+  - nesting               # Too much nesting in code
+  - cyclomatic_complexity  # Complexity is sometimes subjective
+  - trailing_comma         # Trailing commas are okay
+  - large_tuple            # Large tuples are allowed if needed
