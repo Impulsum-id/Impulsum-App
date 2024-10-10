@@ -4,6 +4,13 @@ settings:
   CURRENT_PROJECT_VERSION: 1
 options:
   bundleIdPrefix: com.adagop
+packages:
+  FocusEntity:
+    url: https://github.com/rmRizki/FocusEntity
+    minorVersion: 1.0.0
+  RealityGeometries:
+    url: https://github.com/maxxfrazer/RealityGeometries
+    minorVersion: 1.1.2
 targets:
   Impulsum:
     type: application
