@@ -15,7 +15,6 @@ protocol CloudKitableProtocol {
 }
 
 class CloudKitUtility {
-    
     enum CloudKitError: String, LocalizedError {
         case iCloudAccountNotFound
         case iCloudAccountNotDetermined
@@ -25,13 +24,11 @@ class CloudKitUtility {
         case iCloudCouldNotFetchUserRecordID
         case iCloudCouldNotDiscoverUser
     }
-    
 }
 
 // MARK: USER FUNCTIONS
 
 extension CloudKitUtility {
-    
     static private func getiCloudStatus(completion: @escaping (Result<Bool, Error>) -> ()) {
         CKContainer.default().accountStatus { returnedStatus, returnedError in
             switch returnedStatus {
@@ -48,7 +45,7 @@ extension CloudKitUtility {
             }
         }
     }
-    
+
     static func getiCloudStatus() -> Future<Bool, Error> {
         Future { promise in
             CloudKitUtility.getiCloudStatus { result in
@@ -56,7 +53,7 @@ extension CloudKitUtility {
             }
         }
     }
-    
+
     static private func requestApplicationPermission(completion: @escaping (Result<Bool, Error>) -> ()) {
         CKContainer.default().requestApplicationPermission([.userDiscoverability]) { returnedStatus, returnedError in
             if returnedStatus == .granted {
@@ -66,7 +63,7 @@ extension CloudKitUtility {
             }
         }
     }
-    
+
     static func requestApplicationPermission() -> Future<Bool, Error> {
         Future { promise in
             CloudKitUtility.requestApplicationPermission { result in
@@ -74,7 +71,7 @@ extension CloudKitUtility {
             }
         }
     }
-    
+
     static private func fetchUserRecordID(completion: @escaping (Result<CKRecord.ID, Error>) -> ()) {
         CKContainer.default().fetchUserRecordID { returnedID, returnedError in
             if let id = returnedID {
@@ -86,7 +83,7 @@ extension CloudKitUtility {
             }
         }
     }
-    
+
     static private func discoverUserIdentity(id: CKRecord.ID, completion: @escaping (Result<String, Error>) -> ()) {
         CKContainer.default().discoverUserIdentity(withUserRecordID: id) { returnedIdentity, returnedError in
             if let name = returnedIdentity?.nameComponents?.givenName {
@@ -96,7 +93,7 @@ extension CloudKitUtility {
             }
         }
     }
-    
+
     static private func discoverUserIdentity(completion: @escaping (Result<String, Error>) -> ()) {
         fetchUserRecordID { fetchCompletion in
             switch fetchCompletion {
@@ -107,7 +104,7 @@ extension CloudKitUtility {
             }
         }
     }
-    
+
     static func discoverUserIdentity() -> Future<String, Error> {
         Future { promise in
             CloudKitUtility.discoverUserIdentity { result in
@@ -115,14 +112,10 @@ extension CloudKitUtility {
             }
         }
     }
-
-    
 }
 
 // MARK: CRUD FUNCTIONS
-
 extension CloudKitUtility {
-    
     static func fetch<T:CloudKitableProtocol>(
         predicate: NSPredicate,
         recordType: CKRecord.RecordType,
@@ -135,17 +128,17 @@ extension CloudKitUtility {
             }
         }
     }
-    
+
     static private func fetch<T:CloudKitableProtocol>(
         predicate: NSPredicate,
         recordType: CKRecord.RecordType,
         sortDescriptions: [NSSortDescriptor]? = nil,
         resultsLimit: Int? = nil,
         completion: @escaping (_ items: [T]) -> ()) {
-        
+
         // Create operation
         let operation = createOperation(predicate: predicate, recordType: recordType, sortDescriptions: sortDescriptions, resultsLimit: resultsLimit)
-        
+
         // Get items in query
         var returnedItems: [T] = []
         addRecordMatchedBlock(operation: operation) { item in

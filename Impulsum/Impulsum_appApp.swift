@@ -11,7 +11,7 @@ import SwiftUI
 struct Impulsum_appApp: App {
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            ContentView()
         }
     }
 }
