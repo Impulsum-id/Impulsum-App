@@ -50,6 +50,17 @@ class ARViewController: UIViewController,ARSessionDelegate{
 //        self.texture = loadTextureResource(named: "tiled_dummy_texture")
         self.texture = loadTextureResource(named: "DefaultTexture")
         
+//        self.texture = loadTextureResource()
+        loadTextureResource() { textureResource in
+            if let texture = textureResource {
+                // Use the texture resourcez here
+                self.texture = texture
+                print("Successfully loaded texture resource")
+            } else {
+                print("Failed to load texture resource")
+            }
+        }
+
         NotificationCenter.default.addObserver(forName: .placeModel, object: nil, queue: .main) { _ in
             self.placeModel(in: self.arView, focusEntity: self.focusEntity)
         }
@@ -213,22 +224,75 @@ class ARViewController: UIViewController,ARSessionDelegate{
         return modelEntity
     }
     
-    func loadTextureResource(named imageName: String) -> TextureResource? {
-        guard let uiImage = UIImage(named: imageName),
-              let cgImage = uiImage.cgImage else {
-            print("Failed to load image: \(imageName)")
-            return nil
-        }
+//    func loadTextureResource(named imageName: String) -> TextureResource? {
+//        guard let uiImage = UIImage(named: imageName),
+//              let cgImage = uiImage.cgImage else {
+//            print("Failed to load image: \(imageName)")
+//            return nil
+//        }
+//        
+//        let options = TextureResource.CreateOptions(semantic: .color, mipmapsMode: .allocateAndGenerateAll)
+//        
+//        do {
+//            let texture = try TextureResource.generate(from: cgImage, options: options)
+//            return texture
+//        } catch {
+//            print("Failed to create texture resource: \(error)")
+//            return nil
+//        }
+//    }
+    
+    func loadTextureResource(completion: @escaping (TextureResource?) -> Void) {
+//        var materials: [Material]
+        let viewModel = HomeViewModel()
         
-        let options = TextureResource.CreateOptions(semantic: .color, mipmapsMode: .allocateAndGenerateAll)
-        
-        do {
-            let texture = try TextureResource.generate(from: cgImage, options: options)
-            return texture
-        } catch {
-            print("Failed to create texture resource: \(error)")
-            return nil
+        viewModel.findAll { m in
+//            materials = m
+            // Process the materials here
+            print("Retrieved materials: \(m)")
+            guard let imageUrl = m[0].imageURL else {
+                    print("Invalid image URL")
+                    completion(nil)
+                    return
+            }
+
+            
+            loadImage(from: imageUrl) { uiImage in
+                // Ensure the image is successfully loaded
+                guard let uiImage = uiImage else {
+                    print("Image loading failed")
+                    completion(nil)
+                    return
+                }
+                
+                // Convert UIImage to CGImage
+                guard let cgImage = uiImage.cgImage else {
+                    print("Failed to convert UIImage to CGImage")
+                    completion(nil)
+                    return
+                }
+                
+                // Set texture creation options
+                let options = TextureResource.CreateOptions(semantic: .color, mipmapsMode: .allocateAndGenerateAll)
+                
+                do {
+                    // Generate TextureResource from CGImage
+                    let texture = try TextureResource.generate(from: cgImage, options: options)
+                    DispatchQueue.main.async {
+                        completion(texture)
+                    }
+                } catch {
+                    print("Failed to create texture resource: \(error)")
+                    DispatchQueue.main.async {
+                        completion(nil)
+                    }
+                }
+            }
         }
+
+        
+        
+        
     }
     
     func updateMeshTexture(named imageName: String) {
