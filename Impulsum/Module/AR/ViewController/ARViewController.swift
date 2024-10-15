@@ -17,6 +17,8 @@ class ARViewController: UIViewController,ARSessionDelegate{
     var distanceBetweenTwoPoints = 0;
     var lockDistanceThreshold:Float = 0.4;
     
+    let materialsResponse = loadJson(filename: "materials", as: MaterialsResponse.self)
+    
     private var focusEntity: FocusEntity!
     private var arView: ARView!
     private var texture: TextureResource!
@@ -46,7 +48,9 @@ class ARViewController: UIViewController,ARSessionDelegate{
             )
         )
         
-        self.texture = loadTextureResource(named: "tiled_dummy_texture")
+        materialsResponse.materials[0].image
+//        self.texture = loadTextureResource(named: "tiled_dummy_texture")
+        self.texture = loadTextureResource(named: materialsResponse.materials[0].image)
         
         NotificationCenter.default.addObserver(forName: .placeModel, object: nil, queue: .main) { _ in
             self.placeModel(in: self.arView, focusEntity: self.focusEntity)
