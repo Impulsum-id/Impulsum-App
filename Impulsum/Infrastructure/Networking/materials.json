@@ -1,0 +1,67 @@
+{
+    "materials" : [
+        {
+            "name": "Ares",
+            "brand": "Habitat",
+            "size": "50x50",
+            "color": "",
+            "image": "ares"
+        },
+        {
+            "name": "Argon",
+            "brand": "Habitat",
+            "size": "50x50",
+            "color": "",
+            "image": "argon"
+        },
+        {
+            "name": "Apollo",
+            "brand": "Habitat",
+            "size": "50x50",
+            "color": "",
+            "image": "apollo"
+        },
+        {
+            "name": "Africa",
+            "brand": "Habitat",
+            "size": "50x50",
+            "color": "Light Beige",
+            "image": "africa-light-beige"
+        },
+        {
+            "name": "Africa",
+            "brand": "Habitat",
+            "size": "50x50",
+            "color": "Beige",
+            "image": "africa-beige"
+        },
+        {
+            "name": "dMegapolis",
+            "brand": "Roman",
+            "size": "50x50",
+            "color": "Grey",
+            "image": "dmegapolis-grey"
+        },
+        {
+            "name": "dMegapolis",
+            "brand": "Roman",
+            "size": "50x50",
+            "color": "Beige",
+            "image": "dmegapolis-beige",
+        },
+        {
+            "name": "NewCastle",
+            "brand": "Roman",
+            "size": "50x50",
+            "color": "Perla",
+            "image": "newcastle-perla"
+        },
+        {
+            "name": "NewCastle",
+            "brand": "Roman",
+            "size": "50x50",
+            "color": "Grigio",
+            "image": "newcastle-grigio"
+        }
+    ]
+}
