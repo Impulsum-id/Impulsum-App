@@ -11,8 +11,6 @@ struct MaterialView: View {
     
     let materialsResponse = loadJson(filename: "materials", as: MaterialsResponse.self)
     
-    @Binding var selectedImageName: String?
-    
     let gridLayout = [
         GridItem(.flexible(), alignment: .leading), 
         GridItem(.flexible()), 
@@ -31,6 +29,8 @@ struct MaterialView: View {
                             materialColor: materialsResponse.materials[index].color,
                             onMaterialTap: {
                                 print("Tapped on: \(materialsResponse.materials[index].image)")
+                                
+                                NotificationCenter.default.post(name: .changeMeshTexture, object: materialsResponse.materials[index].image)
                             }
                         )
                     }
@@ -41,7 +41,7 @@ struct MaterialView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 20))
         }
-        .roundedRectangleStyle(height: 559, cornerRadius: 20, material: .thick) // Note ke koh jaya, height nya kalo bisa diganti jadi 559, sebelumnya 578
+        .roundedRectangleStyle(height: 559, cornerRadius: 20, material: .regular)
         .frame(height: 559)
     }
 }
@@ -49,5 +49,5 @@ struct MaterialView: View {
 
 
 #Preview {
-    MaterialView(selectedImageName: .constant("GrigoTexture"))
+    MaterialView()
 }

@@ -15,7 +15,6 @@ struct MaterialMenuView: View {
     @State private var selectedIndex: Int = 0
     
     @Binding var showSettings: Bool
-    @Binding var selectedImageName: String?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -30,7 +29,7 @@ struct MaterialMenuView: View {
                     
                     switch selectedIndex {
                     case 0:
-                        MaterialView(selectedImageName: $selectedImageName)
+                        MaterialView()
                             .transition(.identity)
                     case 1:
                         MaterialSizeView()
@@ -63,7 +62,7 @@ struct MaterialMenuView: View {
             }
             .padding(.vertical, 15)
             .padding(.horizontal, 15)
-            .frame(width: 363)
+//            .frame(width: 363)
             .background(BlurView(style: .systemUltraThinMaterialDark))
             .clipShape(RoundedRectangle(cornerRadius: 29.5))
             .overlay(
@@ -71,6 +70,7 @@ struct MaterialMenuView: View {
                     .inset(by: 0.45)
                     .stroke(.white.opacity(0.3), lineWidth: 0.9)
             )
+            .padding(.horizontal, 15)
         }
         .animation(.smooth, value: selectedIndex)
         .onTapGesture {
@@ -80,5 +80,5 @@ struct MaterialMenuView: View {
 }
 
 #Preview {
-    MaterialMenuView(showSettings: .constant(true), selectedImageName: .constant("GrigoTexture"))
+    MaterialMenuView(showSettings: .constant(true))
 }

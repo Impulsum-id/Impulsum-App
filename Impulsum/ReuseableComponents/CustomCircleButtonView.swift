@@ -54,5 +54,5 @@ struct CustomCircleButtonView: View {
 //}
 
 #Preview {
-    MaterialMenuView(showSettings: .constant(true), selectedImageName: .constant("GrigoTexture"))
+    MaterialMenuView(showSettings: .constant(true))
 }
