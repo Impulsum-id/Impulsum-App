@@ -24,6 +24,10 @@
 	<string>AR use</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Please</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>SF-Pro.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
