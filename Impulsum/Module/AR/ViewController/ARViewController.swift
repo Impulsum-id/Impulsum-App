@@ -14,10 +14,9 @@ import RealityGeometries
 class ARViewController: UIViewController,ARSessionDelegate{
     var modelEntities: [ModelEntity] = []
     var tapeEntity: ModelEntity? = nil;
+    var meshEntity: ModelEntity? = nil
     var distanceBetweenTwoPoints = 0;
     var lockDistanceThreshold:Float = 0.4;
-    
-    let materialsResponse = loadJson(filename: "materials", as: MaterialsResponse.self)
     
     private var focusEntity: FocusEntity!
     private var arView: ARView!
@@ -48,14 +47,18 @@ class ARViewController: UIViewController,ARSessionDelegate{
             )
         )
         
-        materialsResponse.materials[0].image
 //        self.texture = loadTextureResource(named: "tiled_dummy_texture")
-        self.texture = loadTextureResource(named: materialsResponse.materials[0].image)
+        self.texture = loadTextureResource(named: "DefaultTexture")
         
         NotificationCenter.default.addObserver(forName: .placeModel, object: nil, queue: .main) { _ in
             self.placeModel(in: self.arView, focusEntity: self.focusEntity)
         }
         
+        NotificationCenter.default.addObserver(forName: .changeMeshTexture, object: nil, queue: .main) { [weak self] notification in
+            if let newTextureName = notification.object as? String {
+                self?.updateMeshTexture(named: newTextureName)
+            }
+        }
     }
     
     /// Place Model and check if there is any object nearby to lock the position
@@ -205,6 +208,8 @@ class ARViewController: UIViewController,ARSessionDelegate{
         material.emissiveIntensity = 3.0
         
         let modelEntity = ModelEntity(mesh: mesh, materials: [material])
+        self.meshEntity = modelEntity
+        
         return modelEntity
     }
     
@@ -224,6 +229,23 @@ class ARViewController: UIViewController,ARSessionDelegate{
             print("Failed to create texture resource: \(error)")
             return nil
         }
+    }
+    
+    func updateMeshTexture(named imageName: String) {
+        guard let newTexture = loadTextureResource(named: imageName) else {
+            print("Failed to load texture: \(imageName)")
+            return
+        }
+
+        var material = PhysicallyBasedMaterial()
+        let baseColor = MaterialParameters.Texture(newTexture)
+        material.baseColor = PhysicallyBasedMaterial.BaseColor(texture: baseColor)
+        material.textureCoordinateTransform.scale = SIMD2<Float>(2, 2)
+        material.roughness = PhysicallyBasedMaterial.Roughness(floatLiteral: 1.5)
+        material.metallic = PhysicallyBasedMaterial.Metallic(floatLiteral: 1.5)
+        material.emissiveIntensity = 3.0
+
+        meshEntity?.model?.materials = [material]
     }
 }
 

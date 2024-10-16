@@ -13,7 +13,6 @@ struct ContentView : View {
     @EnvironmentObject var keyboardManager: KeyboardManager
     
     @State private var showSettings = false
-    @State private var selectedImageName: String? = nil
     
     var body: some View {
         ZStack {
@@ -30,7 +29,7 @@ struct ContentView : View {
             
             VStack(spacing: 0) {
                 if showSettings {
-                    MaterialMenuView(showSettings: $showSettings, selectedImageName: $selectedImageName)
+                    MaterialMenuView(showSettings: $showSettings)
                 }
                 
                 Spacer()
