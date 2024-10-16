@@ -48,7 +48,7 @@ import CloudKit
 //    }
 //}
 
-struct Material: Codable {
+struct MaterialData: Codable {
 //    var id = UUID()
     let name: String
     let brand: String
@@ -58,5 +58,5 @@ struct Material: Codable {
 }
 
 struct MaterialsResponse: Codable {
-    let materials: [Material]
+    let materials: [MaterialData]
 }
