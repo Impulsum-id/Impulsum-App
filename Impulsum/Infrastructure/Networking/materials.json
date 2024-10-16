@@ -4,43 +4,43 @@
             "name": "Ares",
             "brand": "Habitat",
             "size": "50x50",
-            "color": "",
-            "image": "ares"
+            "color": "-",
+            "image": "ARES"
         },
         {
             "name": "Argon",
             "brand": "Habitat",
             "size": "50x50",
-            "color": "",
-            "image": "argon"
+            "color": "-",
+            "image": "ARGON"
         },
         {
             "name": "Apollo",
             "brand": "Habitat",
             "size": "50x50",
-            "color": "",
-            "image": "apollo"
+            "color": "-",
+            "image": "APOLLO"
         },
         {
             "name": "Africa",
             "brand": "Habitat",
             "size": "50x50",
             "color": "Light Beige",
-            "image": "africa-light-beige"
+            "image": "AFRICA-LIGHT-BEIGE"
         },
         {
             "name": "Africa",
             "brand": "Habitat",
             "size": "50x50",
             "color": "Beige",
-            "image": "africa-beige"
+            "image": "AFRICA-BEIGE"
         },
         {
             "name": "dMegapolis",
             "brand": "Roman",
             "size": "50x50",
             "color": "Grey",
-            "image": "dmegapolis-grey"
+            "image": "dMegapolis-grey"
         },
         {
             "name": "dMegapolis",
