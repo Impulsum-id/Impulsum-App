@@ -11,14 +11,14 @@ struct CustomSegmentedControlView: View {
     
     var segments: [String]
     
-    @Binding var selectedIndex: Int
+    @Binding var selectedSegmentedControlIndex: Int
     
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
                 ForEach(0..<segments.count, id: \.self) { index in
                     ZStack {
-                        if selectedIndex == index {
+                        if selectedSegmentedControlIndex == index {
                             Rectangle()
                                 .fill(Color(red: 106/255, green: 41/255, blue: 9/255))
                                 .frame(maxWidth: .infinity)
@@ -46,10 +46,10 @@ struct CustomSegmentedControlView: View {
                         Text(segments[index])
                             .frame(maxWidth: .infinity)
                             .font(.custom(Fonts.SFProSemibold, size: 12))
-                            .foregroundColor(selectedIndex == index ? .white.opacity(0.96) : .white.opacity(0.23))
+                            .foregroundColor(selectedSegmentedControlIndex == index ? .white.opacity(0.96) : .white.opacity(0.23))
                     }
                     .onTapGesture {
-                        selectedIndex = index
+                        selectedSegmentedControlIndex = index
                     }
                 }
             }
@@ -62,6 +62,6 @@ struct CustomSegmentedControlView: View {
 }
 
 #Preview {
-    CustomSegmentedControlView(segments: ["Material", "Size"] , selectedIndex: .constant(0))
+    CustomSegmentedControlView(segments: ["Material", "Size"] , selectedSegmentedControlIndex: .constant(0))
 }
 

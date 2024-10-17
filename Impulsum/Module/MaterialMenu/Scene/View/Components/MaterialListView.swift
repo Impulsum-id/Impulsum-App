@@ -13,15 +13,12 @@ struct MaterialListView: View {
     let materialBrand: String
     let materialName: String
     let materialColor: String
+    let isMaterialSelected: Bool
     let onMaterialTap: () -> Void
-    
-    @State private var isBoxVisible: Bool = false
     
     var body: some View {
         Button(action: {
             onMaterialTap()
-            
-            isBoxVisible.toggle()
         }) {
             VStack(spacing: 7) {
                 Image(materialImageName)
@@ -30,7 +27,7 @@ struct MaterialListView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(Color.white, lineWidth: 3)
+                            .stroke(isMaterialSelected ? Color(red: 1, green: 0.46, blue: 0.19) : Color.white, lineWidth: 3)
                     )
                 
                 Text(materialBrand)
@@ -54,7 +51,7 @@ struct MaterialListView: View {
 }
 
 #Preview {
-    MaterialListView(materialImageName: "GrigoTexture", materialBrand: "Roman", materialName: "Newcastle", materialColor: "Grigio") { 
+    MaterialListView(materialImageName: "GrigoTexture", materialBrand: "Roman", materialName: "Newcastle", materialColor: "Grigio", isMaterialSelected: true) { 
         print("tapped")
     }
 }

@@ -11,11 +11,13 @@ import SwiftUI
 struct Impulsum_appApp: App {
     
     @StateObject private var keyboardManager = KeyboardManager()
+    @StateObject private var materialSelectionManager = MaterialSelectionManager()
     
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(keyboardManager)
+                .environmentObject(materialSelectionManager)
         }
     }
 }

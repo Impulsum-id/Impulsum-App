@@ -16,10 +16,16 @@ import Combine
 class ARViewController: UIViewController,ARSessionDelegate{
     var modelEntities: [ModelEntity] = []
     var tapeEntity: ModelEntity? = nil;
+    var meshEntity: ModelEntity? = nil
     var distanceBetweenTwoPoints = 0;
     var lockDistanceThreshold:Float = 0.4;
     
     private var cancellable: (any Cancellable)?
+    var textureName: String = "dummy_texture"
+    var tileWidth: Float = 50.0
+    var tileHeight: Float = 50.0
+    var borderWidth: CGFloat = 2.0
+    
     private var focusEntity: FocusEntity!
     private var arView: ARView!
     private var texture: TextureResource!
@@ -34,6 +40,9 @@ class ARViewController: UIViewController,ARSessionDelegate{
         config.planeDetection = [.horizontal, .vertical]
         config.environmentTexturing = .automatic
         config.isLightEstimationEnabled = true
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+            config.frameSemantics.insert(.personSegmentationWithDepth)
+        }
         arView.session.run(config)
         
         let textureActive = try! TextureResource.load(named: "focusActive")
@@ -55,6 +64,46 @@ class ARViewController: UIViewController,ARSessionDelegate{
             self.placeModel(in: self.arView, focusEntity: self.focusEntity)
         }
         
+        NotificationCenter.default.addObserver(forName: .changeMeshTexture, object: nil, queue: .main) { [weak self] notification in
+            if let newTextureName = notification.object as? String {
+                
+                if newTextureName != self?.textureName {
+                    self?.textureName = newTextureName
+                    self?.tileWidth = 50
+                    self?.tileHeight = 50
+                    self?.borderWidth = CGFloat(2.0)
+                    
+                    self?.updateMeshTexture()
+                } else {
+                    self?.textureName = newTextureName
+                    self?.updateMeshTexture()
+                }
+            }
+        }
+        
+        NotificationCenter.default.addObserver(forName: .updateWidth, object: nil, queue: .main) { [weak self] notification in
+            if let width = notification.object as? Float {
+                self?.tileWidth = width
+                self?.updateMeshTexture()
+                print("Updated tile width: \(width)")
+            }
+        }
+
+        NotificationCenter.default.addObserver(forName: .updateLength, object: nil, queue: .main) { [weak self] notification in
+            if let length = notification.object as? Float {
+                self?.tileHeight = length
+                self?.updateMeshTexture()
+                print("Updated tile height: \(length)")
+            }
+        }
+
+        NotificationCenter.default.addObserver(forName: .updateGrout, object: nil, queue: .main) { [weak self] notification in
+            if let grout = notification.object as? Float {
+                self?.borderWidth = CGFloat(grout)
+                self?.updateMeshTexture()
+                print("Updated border width: \(grout)")
+            }
+        }
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         arView.addGestureRecognizer(tapGesture)
     }
@@ -198,6 +247,8 @@ class ARViewController: UIViewController,ARSessionDelegate{
         material.emissiveIntensity = 3.0
         
         let modelEntity = ModelEntity(mesh: mesh, materials: [material])
+        self.meshEntity = modelEntity
+        
         return modelEntity
     }
     
@@ -241,7 +292,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
         }
     }
     
-    func loadTextureResource(named imageName: String, borderColor: UIColor = .gray, borderWidth: CGFloat = 2) -> TextureResource? {
+    func loadTextureResource(named imageName: String, borderWidth: CGFloat = 2) -> TextureResource? {
         guard let uiImage = UIImage(named: imageName),
               let cgImage = uiImage.cgImage else {
             print("Failed to load image: \(imageName)")
@@ -256,7 +307,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
         let newImageContext = CGContext(data: nil, width: Int(newImageWidth), height: Int(newImageHeight), bitsPerComponent: cgImage.bitsPerComponent, bytesPerRow: 0, space: cgImage.colorSpace!, bitmapInfo: cgImage.bitmapInfo.rawValue)!
         
         // Fill the new image context with the border color
-        newImageContext.setFillColor(borderColor.cgColor)
+        newImageContext.setFillColor(UIColor.black.cgColor)
         newImageContext.fill(CGRect(x: 0, y: 0, width: newImageWidth, height: newImageHeight))
         
         // Draw the original image centered in the new image context
@@ -278,6 +329,25 @@ class ARViewController: UIViewController,ARSessionDelegate{
         }
     }
     
+    func updateMeshTexture() {
+        guard let newTexture = loadTextureResource(named: textureName, borderWidth: borderWidth) else {
+            print("Failed to load texture: \(textureName)")
+            return
+        }
+        var material = PhysicallyBasedMaterial()
+        let baseColor = MaterialParameters.Texture(newTexture)
+        material.baseColor = PhysicallyBasedMaterial.BaseColor(texture: baseColor)
+        
+        let scaleFactor: Float = 0.01
+        let tileWidth: Float = tileWidth * scaleFactor
+        let tileHeight: Float = tileHeight * scaleFactor
+        
+        material.textureCoordinateTransform.scale = SIMD2<Float>(1.0 / tileWidth, 1.0 / tileHeight)
+        material.roughness = PhysicallyBasedMaterial.Roughness(floatLiteral: 1.5)
+        material.metallic = PhysicallyBasedMaterial.Metallic(floatLiteral: 1.5)
+        material.emissiveIntensity = 3.0
+        
+        meshEntity?.model?.materials = [material]
     func setupBillboard(for entity: Entity, in arView: ARView) {
         // Ensure we're not retaining the entity or arView strongly to prevent memory leaks
         cancellable = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak arView, weak entity] event in

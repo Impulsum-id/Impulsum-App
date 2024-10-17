@@ -10,9 +10,10 @@ import SwiftUI
 struct MaterialMenuView: View {
     
     @EnvironmentObject var keyboardManager: KeyboardManager
+    @EnvironmentObject var materialSelectionManager: MaterialSelectionManager
     
     @State private var selectedButton: Int = 1
-    @State private var selectedIndex: Int = 0
+    @State private var selectedSegmentedControlIndex: Int = 0
     
     @Binding var showSettings: Bool
     
@@ -24,12 +25,12 @@ struct MaterialMenuView: View {
                         showSettings = false
                     })
                     
-                    CustomSegmentedControlView(segments: ["Material", "Size"], selectedIndex: $selectedIndex)
-                        .animation(nil, value: selectedIndex)
+                    CustomSegmentedControlView(segments: ["Material", "Size"], selectedSegmentedControlIndex: $selectedSegmentedControlIndex)
+                        .animation(nil, value: selectedSegmentedControlIndex)
                     
-                    switch selectedIndex {
+                    switch selectedSegmentedControlIndex {
                     case 0:
-                        MaterialView()
+                        MaterialView(selectedMaterialIndex: $materialSelectionManager.selectedMaterialIndex)
                             .transition(.identity)
                     case 1:
                         MaterialSizeView()
@@ -62,7 +63,6 @@ struct MaterialMenuView: View {
             }
             .padding(.vertical, 15)
             .padding(.horizontal, 15)
-//            .frame(width: 363)
             .background(BlurView(style: .systemUltraThinMaterialDark))
             .clipShape(RoundedRectangle(cornerRadius: 29.5))
             .overlay(
@@ -72,7 +72,7 @@ struct MaterialMenuView: View {
             )
             .padding(.horizontal, 15)
         }
-        .animation(.smooth, value: selectedIndex)
+        .animation(.smooth, value: selectedSegmentedControlIndex)
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
