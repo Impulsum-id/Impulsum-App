@@ -10,4 +10,7 @@ import NotificationCenter
 extension Notification.Name {
     static let placeModel = Notification.Name("placeModel")
     static let changeMeshTexture = Notification.Name("changeMeshTexture")
+    static let updateWidth = Notification.Name("updateWidth")
+    static let updateLength = Notification.Name("updateLength")
+    static let updateGrout = Notification.Name("updateGrout")
 }
