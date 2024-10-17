@@ -17,6 +17,8 @@ struct MaterialView: View {
         GridItem(.flexible(), alignment: .trailing)
     ]
     
+    @Binding var selectedMaterialIndex: Int?
+    
     var body: some View {
         VStack(spacing: 0) { 
             ScrollView {
@@ -27,8 +29,11 @@ struct MaterialView: View {
                             materialBrand: materialsResponse.materials[index].brand,
                             materialName: materialsResponse.materials[index].name,
                             materialColor: materialsResponse.materials[index].color,
+                            isMaterialSelected: index == selectedMaterialIndex,
                             onMaterialTap: {
-                                print("Tapped on: \(materialsResponse.materials[index].image)")
+                                selectedMaterialIndex = index
+                                
+                                print("selected image: \(materialsResponse.materials[index].image)")
                                 
                                 NotificationCenter.default.post(name: .changeMeshTexture, object: materialsResponse.materials[index].image)
                             }
@@ -49,5 +54,5 @@ struct MaterialView: View {
 
 
 #Preview {
-    MaterialView()
+    MaterialView(selectedMaterialIndex: .constant(0))
 }
