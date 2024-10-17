@@ -10,6 +10,8 @@ import FocusEntity
 import RealityKit
 import ARKit
 import SceneKit
+import Combine
+
 
 class ARViewController: UIViewController,ARSessionDelegate{
     var modelEntities: [ModelEntity] = []
@@ -17,6 +19,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
     var distanceBetweenTwoPoints = 0;
     var lockDistanceThreshold:Float = 0.4;
     
+    private var cancellable: (any Cancellable)?
     private var focusEntity: FocusEntity!
     private var arView: ARView!
     private var texture: TextureResource!
@@ -52,6 +55,8 @@ class ARViewController: UIViewController,ARSessionDelegate{
             self.placeModel(in: self.arView, focusEntity: self.focusEntity)
         }
         
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        arView.addGestureRecognizer(tapGesture)
     }
     
     /// Place Model and check if there is any object nearby to lock the position
@@ -79,7 +84,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
         let anchorEntity = AnchorEntity(world: isLockedEntity?.transformMatrix(relativeTo: nil) ?? focusTransform )
         anchorEntity.addChild(modelEntities[self.modelEntities.count - 1])
         arView.scene.addAnchor(anchorEntity)
-       
+        
         
         let modelsLength = self.modelEntities.count
         if(modelsLength >= 2){
@@ -156,23 +161,23 @@ class ARViewController: UIViewController,ARSessionDelegate{
     
     /// Draw Mesh from all of the object position
     func drawMesh(from points: [SIMD3<Float>]) -> ModelEntity? {
-
+        
         guard points.count >= 3 else {
             print("Not enough points to form a mesh")
             return nil
         }
-
+        
         let indices: [UInt32] = generateMesh(points)
         var meshDescriptor = MeshDescriptor()
         meshDescriptor.positions = MeshBuffers.Positions(points)
         
         let textureCoordinates = points.map { SIMD2<Float>($0.x, $0.z)}
         meshDescriptor.textureCoordinates = MeshBuffers.TextureCoordinates(textureCoordinates)
-
+        
         let normals = points.map { _ in SIMD3<Float>(0, 1, 0) } // Adjusted normal direction
         meshDescriptor.normals = MeshBuffers.Normals(normals)
         meshDescriptor.primitives = .triangles(indices)
-
+        
         let mesh: MeshResource
         do {
             mesh = try MeshResource.generate(from: [meshDescriptor])
@@ -180,7 +185,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
             print("Failed to generate mesh: \(error)")
             return ModelEntity()
         }
-
+        
         var material = PhysicallyBasedMaterial()
         let baseColor = MaterialParameters.Texture(texture)
         material.baseColor = PhysicallyBasedMaterial.BaseColor(texture: baseColor)
@@ -191,21 +196,49 @@ class ARViewController: UIViewController,ARSessionDelegate{
         material.roughness = PhysicallyBasedMaterial.Roughness(floatLiteral: 1.5)
         material.metallic = PhysicallyBasedMaterial.Metallic(floatLiteral: 1.5)
         material.emissiveIntensity = 3.0
-
+        
         let modelEntity = ModelEntity(mesh: mesh, materials: [material])
         return modelEntity
     }
-
+    
     func createButtonEntity(at position: SIMD3<Float>) -> ModelEntity {
-        let buttonSize: Float = 0.1 // Adjust size as needed
-        let buttonMesh = MeshResource.generatePlane(width: buttonSize, height: buttonSize)
-        var buttonMaterial = SimpleMaterial()
-        buttonMaterial.baseColor = .color(.blue)
+        let buttonSize: Float = 0.15 // Adjust size as needed
+        let buttonMesh = MeshResource.generatePlane(
+            width: buttonSize,
+            height: buttonSize,
+            cornerRadius: buttonSize / 2
+        )
         
-        let buttonEntity = ModelEntity(mesh: buttonMesh, materials: [buttonMaterial])
-        buttonEntity.position = position
-        buttonEntity.name = "buttonEntity"
-        return buttonEntity
+        guard let iconImage = UIImage(named: "meshButton")?.cgImage else {
+            print("Failed to load icon image")
+            return ModelEntity()
+        }
+        
+        
+        do {
+            let texture = try TextureResource.generate(
+                from: iconImage,
+                options: TextureResource.CreateOptions(semantic: .color)
+            )
+            
+            var buttonMaterial = SimpleMaterial()
+            buttonMaterial.baseColor = MaterialColorParameter.texture(texture)
+            
+            let buttonEntity = ModelEntity(mesh: buttonMesh, materials: [buttonMaterial])
+            let rotation = simd_quatf(angle: -.pi / 2, axis: SIMD3<Float>(1, 0, 0))
+            buttonEntity.orientation = rotation
+            buttonEntity.position = SIMD3(x: position.x, y: position.y + 0.1, z: position.z + 0.1)
+            buttonEntity.name = "buttonEntity"
+            
+            buttonEntity.generateCollisionShapes(recursive: true)
+            
+            setupBillboard(for: buttonEntity, in: arView)
+            
+            return buttonEntity
+        } catch {
+            print("Failed to create texture resource: \(error)")
+            return ModelEntity()
+        }
     }
     
     func loadTextureResource(named imageName: String, borderColor: UIColor = .gray, borderWidth: CGFloat = 2) -> TextureResource? {
@@ -214,21 +247,22 @@ class ARViewController: UIViewController,ARSessionDelegate{
             print("Failed to load image: \(imageName)")
             return nil
         }
-
+        
+        
         // Create a new image context with the desired size
         let newImageWidth = CGFloat(cgImage.width) + borderWidth * 2.0
         let newImageHeight = CGFloat(cgImage.height) + borderWidth * 2.0
         let newImageSize = CGSize(width: newImageWidth, height: newImageHeight)
         let newImageContext = CGContext(data: nil, width: Int(newImageWidth), height: Int(newImageHeight), bitsPerComponent: cgImage.bitsPerComponent, bytesPerRow: 0, space: cgImage.colorSpace!, bitmapInfo: cgImage.bitmapInfo.rawValue)!
-
+        
         // Fill the new image context with the border color
         newImageContext.setFillColor(borderColor.cgColor)
         newImageContext.fill(CGRect(x: 0, y: 0, width: newImageWidth, height: newImageHeight))
-
+        
         // Draw the original image centered in the new image context
         let imageRect = CGRect(x: borderWidth, y: borderWidth, width: CGFloat(cgImage.width), height: CGFloat(cgImage.height))
         newImageContext.draw(cgImage, in: imageRect)
-
+        
         // Create a new CGImage from the new image context
         if let newCGImage = newImageContext.makeImage() {
             do {
@@ -241,6 +275,51 @@ class ARViewController: UIViewController,ARSessionDelegate{
         } else {
             print("Failed to create new CGImage")
             return nil
+        }
+    }
+    
+    func setupBillboard(for entity: Entity, in arView: ARView) {
+        // Ensure we're not retaining the entity or arView strongly to prevent memory leaks
+        cancellable = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak arView, weak entity] event in
+            guard let arView = arView, let entity = entity else { return }
+
+            // Get the current camera transform
+            guard let cameraTransform = arView.session.currentFrame?.camera.transform else {
+                return
+            }
+
+            // Calculate the direction from the entity to the camera
+            let cameraPosition = SIMD3<Float>(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
+            let entityPosition = entity.position(relativeTo: nil)
+            let direction = normalize(cameraPosition - entityPosition)
+
+            // Update the entity's orientation to face the camera
+            let up = SIMD3<Float>(0, 1, 0) // World up vector
+            let right = normalize(cross(up, direction))
+            let correctedUp = cross(direction, right)
+            let rotationMatrix = float3x3(columns: (right, correctedUp, direction))
+            entity.orientation = simd_quatf(rotationMatrix)
+        }
+    }
+    
+    func entityContainsName(_ entity: Entity?, name: String) -> Bool {
+        var currentEntity = entity
+        while let entity = currentEntity {
+            if entity.name == name {
+                return true
+            }
+            currentEntity = entity.parent
+        }
+        return false
+    }
+    
+    @objc func handleTap(_ sender: UITapGestureRecognizer) {
+        let arView = sender.view as! ARView
+        let location = sender.location(in: arView)
+        if let tappedEntity = arView.entity(at: location) {
+            if entityContainsName(tappedEntity, name: "buttonEntity") {
+                print("Button tapped!")
+            }
         }
     }
 }
