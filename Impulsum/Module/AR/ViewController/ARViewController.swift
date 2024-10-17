@@ -208,17 +208,38 @@ class ARViewController: UIViewController,ARSessionDelegate{
         return buttonEntity
     }
     
-    func loadTextureResource(named imageName: String) -> TextureResource? {
+    func loadTextureResource(named imageName: String, borderColor: UIColor = .gray, borderWidth: CGFloat = 2) -> TextureResource? {
         guard let uiImage = UIImage(named: imageName),
               let cgImage = uiImage.cgImage else {
             print("Failed to load image: \(imageName)")
             return nil
         }
-        do {
-            let texture = try TextureResource.generate(from: cgImage, options: .init(semantic: nil))
-            return texture
-        } catch {
-            print("Failed to create texture resource: \(error)")
+
+        // Create a new image context with the desired size
+        let newImageWidth = CGFloat(cgImage.width) + borderWidth * 2.0
+        let newImageHeight = CGFloat(cgImage.height) + borderWidth * 2.0
+        let newImageSize = CGSize(width: newImageWidth, height: newImageHeight)
+        let newImageContext = CGContext(data: nil, width: Int(newImageWidth), height: Int(newImageHeight), bitsPerComponent: cgImage.bitsPerComponent, bytesPerRow: 0, space: cgImage.colorSpace!, bitmapInfo: cgImage.bitmapInfo.rawValue)!
+
+        // Fill the new image context with the border color
+        newImageContext.setFillColor(borderColor.cgColor)
+        newImageContext.fill(CGRect(x: 0, y: 0, width: newImageWidth, height: newImageHeight))
+
+        // Draw the original image centered in the new image context
+        let imageRect = CGRect(x: borderWidth, y: borderWidth, width: CGFloat(cgImage.width), height: CGFloat(cgImage.height))
+        newImageContext.draw(cgImage, in: imageRect)
+
+        // Create a new CGImage from the new image context
+        if let newCGImage = newImageContext.makeImage() {
+            do {
+                let texture = try TextureResource.generate(from: newCGImage, options: .init(semantic: nil))
+                return texture
+            } catch {
+                print("Failed to create texture resource: \(error)")
+                return nil
+            }
+        } else {
+            print("Failed to create new CGImage")
             return nil
         }
     }
