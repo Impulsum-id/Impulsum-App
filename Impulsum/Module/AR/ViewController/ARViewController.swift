@@ -31,6 +31,9 @@ class ARViewController: UIViewController,ARSessionDelegate{
         config.planeDetection = [.horizontal, .vertical]
         config.environmentTexturing = .automatic
         config.isLightEstimationEnabled = true
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+            config.frameSemantics.insert(.personSegmentationWithDepth)
+        }
         arView.session.run(config)
         
         let textureActive = try! TextureResource.load(named: "focusActive")
