@@ -6,15 +6,14 @@
 //
 
 import SwiftUI
+import FocusEntity
 import RealityKit
 import ARKit
-import FocusEntity
-import RealityGeometries
+import SceneKit
 
 class ARViewController: UIViewController,ARSessionDelegate{
     var modelEntities: [ModelEntity] = []
     var tapeEntity: ModelEntity? = nil;
-    var meshEntity: ModelEntity? = nil
     var distanceBetweenTwoPoints = 0;
     var lockDistanceThreshold:Float = 0.4;
     
@@ -47,18 +46,12 @@ class ARViewController: UIViewController,ARSessionDelegate{
             )
         )
         
-//        self.texture = loadTextureResource(named: "tiled_dummy_texture")
-        self.texture = loadTextureResource(named: "DefaultTexture")
+        self.texture = loadTextureResource(named: "dummy_texture")
         
         NotificationCenter.default.addObserver(forName: .placeModel, object: nil, queue: .main) { _ in
             self.placeModel(in: self.arView, focusEntity: self.focusEntity)
         }
         
-        NotificationCenter.default.addObserver(forName: .changeMeshTexture, object: nil, queue: .main) { [weak self] notification in
-            if let newTextureName = notification.object as? String {
-                self?.updateMeshTexture(named: newTextureName)
-            }
-        }
     }
     
     /// Place Model and check if there is any object nearby to lock the position
@@ -76,20 +69,17 @@ class ARViewController: UIViewController,ARSessionDelegate{
             }
         }
         
-        do {
-            let entity = try ModelEntity(
-                mesh: MeshResource.generatePlane(width: 0.03, depth: 0.03, cornerRadius: 50),
-                materials: [UnlitMaterial(color: .white)]
-            )
-            let focusTransform = focusEntity.transformMatrix(relativeTo: nil)
-            self.modelEntities.append(entity)
-            
-            let anchorEntity = AnchorEntity(world: isLockedEntity?.transformMatrix(relativeTo: nil) ?? focusTransform )
-            anchorEntity.addChild(modelEntities[self.modelEntities.count - 1])
-            arView.scene.addAnchor(anchorEntity)
-        } catch {
-            print("Failed to load model: \(error)")
-        }
+        let entity = ModelEntity(
+            mesh: MeshResource.generatePlane(width: 0.05, depth: 0.05, cornerRadius: 50),
+            materials: [UnlitMaterial(color: .white)]
+        )
+        let focusTransform = focusEntity.transformMatrix(relativeTo: nil)
+        self.modelEntities.append(entity)
+        
+        let anchorEntity = AnchorEntity(world: isLockedEntity?.transformMatrix(relativeTo: nil) ?? focusTransform )
+        anchorEntity.addChild(modelEntities[self.modelEntities.count - 1])
+        arView.scene.addAnchor(anchorEntity)
+       
         
         let modelsLength = self.modelEntities.count
         if(modelsLength >= 2){
@@ -101,15 +91,25 @@ class ARViewController: UIViewController,ARSessionDelegate{
         
         let modelsPoints = self.modelEntities.map{$0.position(relativeTo: nil)}
         if(hasDuplicatePoints(in: modelsPoints)){
-            print("HAS DUPLICATE")
-            let modelEntity = drawMesh(from: modelsPoints)
+            let newPoints: [SIMD3<Float>] =  modelsPoints.dropLast()
+            
+            // Draw Mesh
+            let modelEntity = drawMesh(from: newPoints)
+            
+            // Draw Button
+            let centroid = calculateCentroid(of: newPoints)
+            let buttonEntity = createButtonEntity(at: centroid)
+            
+            // Append Mesh & Button to Anchor
             let anchor = AnchorEntity(world: self.modelEntities.first!.position)
-            if modelEntity != nil {
-                anchor.addChild(modelEntity!)
-                arView.scene.addAnchor(anchor)
+            guard modelEntity != nil else {
+                return print("Error: Mesh not created")
             }
+            
+            anchor.addChild(modelEntity!)
+            anchor.addChild(buttonEntity)
+            arView.scene.addAnchor(anchor)
         }
-        
     }
     
     /// Check For Duplicates
@@ -139,7 +139,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
         // Format the distance text
         let distanceText = String(format: "%.2f m", distance)
         let textMesh = MeshResource.generateText(distanceText, extrusionDepth: 0, font: .systemFont(ofSize: 0.04), containerFrame: .zero, alignment: .center, lineBreakMode: .byWordWrapping)
-        var textMaterial = UnlitMaterial(color: .black)
+        let textMaterial = UnlitMaterial(color: .black)
         let textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
         
         textEntity.position = (start + end) / 2.0
@@ -156,41 +156,23 @@ class ARViewController: UIViewController,ARSessionDelegate{
     
     /// Draw Mesh from all of the object position
     func drawMesh(from points: [SIMD3<Float>]) -> ModelEntity? {
-        
+
         guard points.count >= 3 else {
             print("Not enough points to form a mesh")
             return nil
         }
-        
-        var indices: [UInt32] = []
-        for i in 1...(points.count-3){
-            indices.append(0)
-            indices.append(UInt32(i))
-            indices.append(UInt32(i + 1))
-            
-            indices.append(0)
-            indices.append(UInt32(i + 1))
-            indices.append(UInt32(i))
-        }
-        
+
+        let indices: [UInt32] = generateMesh(points)
         var meshDescriptor = MeshDescriptor()
         meshDescriptor.positions = MeshBuffers.Positions(points)
-        print("Positions: ")
-        print(points)
         
-        let textureCoordinates = points.map { point in
-            let x = point.x
-            let z = point.z
-            return SIMD2<Float>(x, z)
-        }
-        print("Texture Coordinates: ")
-        print(textureCoordinates)
+        let textureCoordinates = points.map { SIMD2<Float>($0.x, $0.z)}
         meshDescriptor.textureCoordinates = MeshBuffers.TextureCoordinates(textureCoordinates)
 
-        let normals = points.map { _ in SIMD3<Float>(0, 0, 1) }
+        let normals = points.map { _ in SIMD3<Float>(0, 1, 0) } // Adjusted normal direction
         meshDescriptor.normals = MeshBuffers.Normals(normals)
         meshDescriptor.primitives = .triangles(indices)
-        
+
         let mesh: MeshResource
         do {
             mesh = try MeshResource.generate(from: [meshDescriptor])
@@ -198,19 +180,32 @@ class ARViewController: UIViewController,ARSessionDelegate{
             print("Failed to generate mesh: \(error)")
             return ModelEntity()
         }
-        
+
         var material = PhysicallyBasedMaterial()
         let baseColor = MaterialParameters.Texture(texture)
-        material.baseColor = PhysicallyBasedMaterial.BaseColor(texture:baseColor)
-        material.textureCoordinateTransform.scale = SIMD2<Float>(2, 2)
+        material.baseColor = PhysicallyBasedMaterial.BaseColor(texture: baseColor)
+        let scaleFactor: Float = 0.01
+        let tileWidth: Float = 50 * scaleFactor
+        let tileHeight: Float = 50 * scaleFactor
+        material.textureCoordinateTransform.scale = SIMD2<Float>(1.0 / tileWidth, 1.0 / tileHeight)
         material.roughness = PhysicallyBasedMaterial.Roughness(floatLiteral: 1.5)
         material.metallic = PhysicallyBasedMaterial.Metallic(floatLiteral: 1.5)
         material.emissiveIntensity = 3.0
-        
+
         let modelEntity = ModelEntity(mesh: mesh, materials: [material])
-        self.meshEntity = modelEntity
-        
         return modelEntity
+    }
+
+    func createButtonEntity(at position: SIMD3<Float>) -> ModelEntity {
+        let buttonSize: Float = 0.1 // Adjust size as needed
+        let buttonMesh = MeshResource.generatePlane(width: buttonSize, height: buttonSize)
+        var buttonMaterial = SimpleMaterial()
+        buttonMaterial.baseColor = .color(.blue)
+        
+        let buttonEntity = ModelEntity(mesh: buttonMesh, materials: [buttonMaterial])
+        buttonEntity.position = position
+        buttonEntity.name = "buttonEntity"
+        return buttonEntity
     }
     
     func loadTextureResource(named imageName: String) -> TextureResource? {
@@ -219,33 +214,13 @@ class ARViewController: UIViewController,ARSessionDelegate{
             print("Failed to load image: \(imageName)")
             return nil
         }
-        
-        let options = TextureResource.CreateOptions(semantic: .color, mipmapsMode: .allocateAndGenerateAll)
-        
         do {
-            let texture = try TextureResource.generate(from: cgImage, options: options)
+            let texture = try TextureResource.generate(from: cgImage, options: .init(semantic: nil))
             return texture
         } catch {
             print("Failed to create texture resource: \(error)")
             return nil
         }
-    }
-    
-    func updateMeshTexture(named imageName: String) {
-        guard let newTexture = loadTextureResource(named: imageName) else {
-            print("Failed to load texture: \(imageName)")
-            return
-        }
-
-        var material = PhysicallyBasedMaterial()
-        let baseColor = MaterialParameters.Texture(newTexture)
-        material.baseColor = PhysicallyBasedMaterial.BaseColor(texture: baseColor)
-        material.textureCoordinateTransform.scale = SIMD2<Float>(2, 2)
-        material.roughness = PhysicallyBasedMaterial.Roughness(floatLiteral: 1.5)
-        material.metallic = PhysicallyBasedMaterial.Metallic(floatLiteral: 1.5)
-        material.emissiveIntensity = 3.0
-
-        meshEntity?.model?.materials = [material]
     }
 }
 
