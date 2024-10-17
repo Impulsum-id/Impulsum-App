@@ -10,28 +10,41 @@ import RealityKit
 
 struct ContentView : View {
     
+    @EnvironmentObject var keyboardManager: KeyboardManager
+    
+    @State private var showSettings = false
+    
     var body: some View {
         ZStack {
-            ARViewContainer().edgesIgnoringSafeArea(.all)
-            VStack {
+            ARViewContainer()
+                .edgesIgnoringSafeArea(.all)
+            
+            VStack(spacing: 0) {                
                 Spacer()
-                Button(action: {
-                    NotificationCenter.default.post(name: .placeModel, object: nil)
-                }){
-                    Image(systemName: "plus")
-                        .font(.headline)
-                        .foregroundStyle(.black)
-                        .padding()
-                        .background(.white)
-                        .clipShape(Circle())
-                        .padding()
+                
+                if !keyboardManager.isKeyboardVisible {
+                    TabBarView(showSettings: $showSettings)
                 }
             }
+            
+            VStack(spacing: 0) {
+                if showSettings {
+                    MaterialMenuView(showSettings: $showSettings)
+                }
+                
+                Spacer()
+            }
+
+        }
+        .preferredColorScheme(.dark)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
     }
-    
 }
 
 #Preview {
     ContentView()
+        .environmentObject(KeyboardManager())
 }

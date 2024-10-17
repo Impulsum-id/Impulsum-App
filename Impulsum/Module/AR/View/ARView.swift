@@ -10,6 +10,7 @@ import UIKit
 import SwiftUI
 
 struct ARViewContainer: UIViewControllerRepresentable {
+    
     func updateUIViewController(_ uiViewController: ARViewController, context: Context) {
         
     }
