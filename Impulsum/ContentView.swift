@@ -6,19 +6,46 @@
 //
 
 import SwiftUI
+import RealityKit
 
 struct ContentView: View {
+    
+    @EnvironmentObject var keyboardManager: KeyboardManager
+    @EnvironmentObject var materialManager: MaterialSelectionManager
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        ZStack {
+            ARViewContainer()
+                .environmentObject(materialManager)
+                .edgesIgnoringSafeArea(.all)
+            
+            VStack(spacing: 0) {
+                Spacer()
+                
+                if !keyboardManager.isKeyboardVisible {
+                    TabBarView(showSettings: $materialManager.showSettings)
+                }
+            }
+            
+            VStack(spacing: 0) {
+                if materialManager.showSettings {
+                    MaterialMenuView(showSettings: $materialManager.showSettings)
+                }
+                
+                Spacer()
+            }
+
         }
-        .padding()
+        .preferredColorScheme(.dark)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(KeyboardManager())
+        .environmentObject(MaterialSelectionManager())
 }

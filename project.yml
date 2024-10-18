@@ -1,9 +1,17 @@
 name: Impulsum
 settings:
+  PRODUCT_NAME: Visi-ble
   MARKETING_VERSION: "1.0"
   CURRENT_PROJECT_VERSION: 1
 options:
   bundleIdPrefix: com.adagop
+packages:
+  FocusEntity:
+    url: https://github.com/rmRizki/FocusEntity
+    minorVersion: 1.0.1
+  RealityGeometries:
+    url: https://github.com/maxxfrazer/RealityGeometries
+    minorVersion: 1.1.2
 targets:
   Impulsum:
     type: application
@@ -13,6 +21,14 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.adagop.Impulsum
       INFOPLIST_FILE: Impulsum/Info.plist
+    preBuildScripts:
+      - script: |
+          ./Scripts/SwiftLint/swiftlint lint --quiet
+        name: Swiftlint
+    dependencies:
+      - package: FocusEntity
+      - package: RealityGeometries
+
 schemes:
   Impulsum:
     build:

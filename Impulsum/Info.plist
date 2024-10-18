@@ -20,8 +20,14 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>AR use</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Please</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>SF-Pro.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -36,6 +42,10 @@
 		<key>UILaunchScreen</key>
 		<dict/>
 	</dict>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arkit</string>
+	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
