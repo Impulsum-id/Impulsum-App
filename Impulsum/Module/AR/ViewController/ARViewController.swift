@@ -28,6 +28,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
     var tileWidth: Float = 50.0
     var tileHeight: Float = 50.0
     var borderWidth: CGFloat = 2.0
+    let scaleFactor: Float = 0.01
     
     private var cancellable: (any Cancellable)?
     private var focusEntity: FocusEntity!
@@ -182,9 +183,8 @@ class ARViewController: UIViewController,ARSessionDelegate{
         }
     }
     
-    func undoModel(){
+    func undoModel() {
         guard !modelEntities.isEmpty && modelEntities.first != nil else {
-            print("No more entities to undo.")
             return
         }
         
@@ -269,7 +269,6 @@ class ARViewController: UIViewController,ARSessionDelegate{
     func drawMesh(from points: [SIMD3<Float>]) -> ModelEntity? {
         
         guard points.count >= 3 else {
-            print("Not enough points to form a mesh")
             return nil
         }
         
@@ -295,7 +294,6 @@ class ARViewController: UIViewController,ARSessionDelegate{
         var material = PhysicallyBasedMaterial()
         let baseColor = MaterialParameters.Texture(texture)
         material.baseColor = PhysicallyBasedMaterial.BaseColor(texture: baseColor)
-        let scaleFactor: Float = 0.01
         let tileWidth: Float = 50 * scaleFactor
         let tileHeight: Float = 50 * scaleFactor
         material.textureCoordinateTransform.scale = SIMD2<Float>(1.0 / tileWidth, 1.0 / tileHeight)
@@ -318,7 +316,6 @@ class ARViewController: UIViewController,ARSessionDelegate{
         let baseColor = MaterialParameters.Texture(newTexture)
         material.baseColor = PhysicallyBasedMaterial.BaseColor(texture: baseColor)
         
-        let scaleFactor: Float = 0.01
         let tileWidth: Float = tileWidth * scaleFactor
         let tileHeight: Float = tileHeight * scaleFactor
         
@@ -335,6 +332,10 @@ class ARViewController: UIViewController,ARSessionDelegate{
         let location = sender.location(in: arView)
         
         guard materialManager != nil else { return }
+        
+        if materialManager?.showSettings == true {
+            materialManager?.showSettings = false
+        }
         
         if let tappedEntity = arView?.entity(at: location) {
             if entityContainsName(tappedEntity, name: "buttonEntity") {

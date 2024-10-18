@@ -46,8 +46,8 @@ struct MaterialView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 20))
         }
-        .roundedRectangleStyle(height: 559, cornerRadius: 20, material: .regular)
-        .frame(height: 559)
+        .roundedRectangleStyle(height: 318, cornerRadius: 20, material: .regular)
+        .frame(height: 318)
     }
 }
 
