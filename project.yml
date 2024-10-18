@@ -11,6 +11,9 @@ packages:
   RealityGeometries:
     url: https://github.com/maxxfrazer/RealityGeometries
     minorVersion: 1.1.2
+  supabase-swift:
+    url: https://github.com/supabase/supabase-swift
+    minorVersion: 2.0.0
 targets:
   Impulsum:
     type: application

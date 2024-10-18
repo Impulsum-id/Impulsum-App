@@ -8,6 +8,7 @@
 DerivedData/
 .build/
 build/
+*.xcconfig
 
 ## App packaging
 *.ipa

@@ -15,9 +15,10 @@ struct Impulsum_appApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(keyboardManager)
-                .environmentObject(materialSelectionManager)
+//            ContentView()
+//                .environmentObject(keyboardManager)
+//                .environmentObject(materialSelectionManager)
+            HomeView()
         }
     }
 }
