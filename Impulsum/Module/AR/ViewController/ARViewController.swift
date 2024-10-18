@@ -187,7 +187,14 @@ class ARViewController: UIViewController,ARSessionDelegate{
         
         // Format the distance text
         let distanceText = String(format: "%.2f m", distance)
-        let textMesh = MeshResource.generateText(distanceText, extrusionDepth: 0, font: .systemFont(ofSize: 0.04), containerFrame: .zero, alignment: .center, lineBreakMode: .byWordWrapping)
+        let textMesh = MeshResource.generateText(
+            distanceText,
+            extrusionDepth: 0,
+            font: .systemFont(ofSize: 0.04),
+            containerFrame: .zero,
+            alignment: .center,
+            lineBreakMode: .byWordWrapping
+        )
         let textMaterial = UnlitMaterial(color: .black)
         let textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
         
@@ -270,7 +277,14 @@ class ARViewController: UIViewController,ARSessionDelegate{
         let newImageWidth = CGFloat(cgImage.width) + borderWidth * 2.0
         let newImageHeight = CGFloat(cgImage.height) + borderWidth * 2.0
         let newImageSize = CGSize(width: newImageWidth, height: newImageHeight)
-        let newImageContext = CGContext(data: nil, width: Int(newImageWidth), height: Int(newImageHeight), bitsPerComponent: cgImage.bitsPerComponent, bytesPerRow: 0, space: cgImage.colorSpace!, bitmapInfo: cgImage.bitmapInfo.rawValue)!
+        let newImageContext = CGContext(
+            data: nil,
+            width: Int(newImageWidth),
+            height: Int(newImageHeight),
+            bitsPerComponent: cgImage.bitsPerComponent,
+            bytesPerRow: 0, space: cgImage.colorSpace!,
+            bitmapInfo: cgImage.bitmapInfo.rawValue
+        )!
 
         // Fill the new image context with the border color
         newImageContext.setFillColor(UIColor.black.cgColor)

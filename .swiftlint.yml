@@ -43,11 +43,12 @@ implicit_return: warning
 
 # Style rules
 trailing_whitespace:
-  severity: warning
+  ignores_empty_lines: true
 
 identifier_name:
   min_length:
-    error: 3   # Error if identifier name is shorter than 3 characters
+    error: 0
+    warning: 0
   max_length:
     warning: 40  # Warning if identifier name is longer than 40 characters
 

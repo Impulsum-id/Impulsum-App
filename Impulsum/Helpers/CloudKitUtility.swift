@@ -123,7 +123,12 @@ extension CloudKitUtility {
         resultsLimit: Int? = nil
     ) -> Future<[T], Error> {
         Future { promise in
-            CloudKitUtility.fetch(predicate: predicate, recordType: recordType, sortDescriptions: sortDescriptions, resultsLimit: resultsLimit) { (items: [T]) in
+            CloudKitUtility.fetch(
+                predicate: predicate,
+                recordType: recordType,
+                sortDescriptions: sortDescriptions,
+                resultsLimit: resultsLimit
+            ) { (items: [T]) in
                 promise(.success(items))
             }
         }
@@ -137,7 +142,12 @@ extension CloudKitUtility {
         completion: @escaping (_ items: [T]) -> ()) {
 
         // Create operation
-        let operation = createOperation(predicate: predicate, recordType: recordType, sortDescriptions: sortDescriptions, resultsLimit: resultsLimit)
+        let operation = createOperation(
+            predicate: predicate,
+            recordType: recordType,
+            sortDescriptions: sortDescriptions,
+            resultsLimit: resultsLimit
+        )
 
         // Get items in query
         var returnedItems: [T] = []
