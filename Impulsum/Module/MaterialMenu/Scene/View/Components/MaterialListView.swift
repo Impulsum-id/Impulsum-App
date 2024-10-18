@@ -51,7 +51,11 @@ struct MaterialListView: View {
 }
 
 #Preview {
-    MaterialListView(materialImageName: "GrigoTexture", materialBrand: "Roman", materialName: "Newcastle", materialColor: "Grigio", isMaterialSelected: true) { 
+    MaterialListView(
+        materialImageName: "GrigoTexture", materialBrand: "Roman",
+        materialName: "Newcastle", materialColor: "Grigio",
+        isMaterialSelected: true
+    ) {
         print("tapped")
     }
 }
