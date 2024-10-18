@@ -123,7 +123,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
     /// Place Model and check if there is any object nearby to lock the position
     /// on that object position to make the mesh
     func placeModel(in arView: ARView, focusEntity: FocusEntity?) {
-        guard let focusEntity = focusEntity else { return }
+        guard let focusEntity = focusEntity, self.meshEntity == nil else { return }
         var isLockedEntity:ModelEntity?
 
         // Validate Lock Entity
