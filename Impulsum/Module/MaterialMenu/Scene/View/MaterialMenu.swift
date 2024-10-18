@@ -25,7 +25,10 @@ struct MaterialMenuView: View {
                         showSettings = false
                     })
                     
-                    CustomSegmentedControlView(segments: ["Material", "Size"], selectedSegmentedControlIndex: $selectedSegmentedControlIndex)
+                    CustomSegmentedControlView(
+                        segments: ["Material", "Size"],
+                        selectedSegmentedControlIndex: $selectedSegmentedControlIndex
+                    )
                         .animation(nil, value: selectedSegmentedControlIndex)
                     
                     switch selectedSegmentedControlIndex {
@@ -48,7 +51,13 @@ struct MaterialMenuView: View {
                 }
                 
                 HStack(spacing: 15) {
-                    CustomCircleButtonView(width: 55, height: 55, iconName: "square.on.square.intersection.dashed", isSelected: selectedButton == 1, isSystemImage: true) {
+                    CustomCircleButtonView(
+                        width: 55,
+                        height: 55,
+                        iconName: "square.on.square.intersection.dashed",
+                        isSelected: selectedButton == 1,
+                        isSystemImage: true
+                    ) {
                         selectedButton = 1
                     }
                     

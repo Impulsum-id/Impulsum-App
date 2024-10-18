@@ -8,7 +8,7 @@
 import SwiftUI
 import RealityKit
 
-struct ContentView : View {
+struct ContentView: View {
     
     @EnvironmentObject var keyboardManager: KeyboardManager
     @EnvironmentObject var materialManager: MaterialSelectionManager
@@ -19,7 +19,7 @@ struct ContentView : View {
                 .environmentObject(materialManager)
                 .edgesIgnoringSafeArea(.all)
             
-            VStack(spacing: 0) {                
+            VStack(spacing: 0) {
                 Spacer()
                 
                 if !keyboardManager.isKeyboardVisible {
