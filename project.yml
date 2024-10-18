@@ -7,7 +7,7 @@ options:
 packages:
   FocusEntity:
     url: https://github.com/rmRizki/FocusEntity
-    minorVersion: 1.0.0
+    minorVersion: 1.0.1
   RealityGeometries:
     url: https://github.com/maxxfrazer/RealityGeometries
     minorVersion: 1.1.2
