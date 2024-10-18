@@ -8,5 +8,6 @@
 import SwiftUI
 
 class MaterialSelectionManager: ObservableObject {
+    @Published var showSettings:Bool = false
     @Published var selectedMaterialIndex: Int? = nil
 }

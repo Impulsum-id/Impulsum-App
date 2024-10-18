@@ -14,18 +14,22 @@ import Combine
 
 
 class ARViewController: UIViewController,ARSessionDelegate{
-    var modelEntities: [ModelEntity] = []
-    var tapeEntity: ModelEntity? = nil;
-    var meshEntity: ModelEntity? = nil
-    var distanceBetweenTwoPoints = 0;
-    var lockDistanceThreshold:Float = 0.4;
+    var materialManager: MaterialSelectionManager?
     
-    private var cancellable: (any Cancellable)?
+    var modelEntities: [ModelEntity] = []
+    var tapeEntities: [ModelEntity] = []
+    var buttonEntity: ModelEntity? = nil
+    var meshEntity: ModelEntity? = nil
+    
+    var distanceBetweenTwoPoints = 0
+    var lockDistanceThreshold:Float = 0.1
+    
     var textureName: String = "dummy_texture"
     var tileWidth: Float = 50.0
     var tileHeight: Float = 50.0
     var borderWidth: CGFloat = 2.0
     
+    private var cancellable: (any Cancellable)?
     private var focusEntity: FocusEntity!
     private var arView: ARView!
     private var texture: TextureResource!
@@ -62,6 +66,14 @@ class ARViewController: UIViewController,ARSessionDelegate{
         
         NotificationCenter.default.addObserver(forName: .placeModel, object: nil, queue: .main) { _ in
             self.placeModel(in: self.arView, focusEntity: self.focusEntity)
+        }
+        
+        NotificationCenter.default.addObserver(forName: .undoModel, object: nil, queue: .main) { _ in
+            self.undoModel()
+        }
+        
+        NotificationCenter.default.addObserver(forName: .resetModel, object: nil, queue: .main) { _ in
+            self.resetModel()
         }
         
         NotificationCenter.default.addObserver(forName: .changeMeshTexture, object: nil, queue: .main) { [weak self] notification in
@@ -113,16 +125,19 @@ class ARViewController: UIViewController,ARSessionDelegate{
     func placeModel(in arView: ARView, focusEntity: FocusEntity?) {
         guard let focusEntity = focusEntity else { return }
         var isLockedEntity:ModelEntity?
-        
-        for modelEntity in modelEntities {
-            let modelPosition = modelEntity.position(relativeTo: nil)
-            let distanceToModel = simd_distance(focusEntity.position, modelPosition)
+
+        // Validate Lock Entity
+        if let pivotModelEntity = modelEntities.first{
+            let pivotModelPosition = pivotModelEntity.position(relativeTo: nil)
+            let distanceToModel = simd_distance(focusEntity.position, pivotModelPosition)
             
             if distanceToModel < lockDistanceThreshold {
-                isLockedEntity = modelEntity
+                isLockedEntity = pivotModelEntity
             }
         }
         
+        
+        // Draw Entity
         let entity = ModelEntity(
             mesh: MeshResource.generatePlane(width: 0.05, depth: 0.05, cornerRadius: 50),
             materials: [UnlitMaterial(color: .white)]
@@ -134,7 +149,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
         anchorEntity.addChild(modelEntities[self.modelEntities.count - 1])
         arView.scene.addAnchor(anchorEntity)
         
-        
+        // Draw Line
         let modelsLength = self.modelEntities.count
         if(modelsLength >= 2){
             let positionA = modelEntities[modelsLength-2].position(relativeTo: nil)
@@ -142,17 +157,18 @@ class ARViewController: UIViewController,ARSessionDelegate{
             
             drawLine(from: positionA, to: positionB, distance: distance(positionA, positionB))
         }
-        
+                
+        // Draw Mesh
         let modelsPoints = self.modelEntities.map{$0.position(relativeTo: nil)}
-        if(hasDuplicatePoints(in: modelsPoints)){
+        if(isDrawable(in: modelsPoints)){
             let newPoints: [SIMD3<Float>] =  modelsPoints.dropLast()
             
-            // Draw Mesh
             let modelEntity = drawMesh(from: newPoints)
             
             // Draw Button
             let centroid = calculateCentroid(of: newPoints)
             let buttonEntity = createButtonEntity(at: centroid)
+            self.buttonEntity = buttonEntity
             
             // Append Mesh & Button to Anchor
             let anchor = AnchorEntity(world: self.modelEntities.first!.position)
@@ -167,6 +183,10 @@ class ARViewController: UIViewController,ARSessionDelegate{
     }
     
     /// Check For Duplicates
+    func isDrawable(in points: [SIMD3<Float>]) -> Bool{
+        return points.first == points.last
+    }
+    
     func hasDuplicatePoints(in points: [SIMD3<Float>]) -> Bool {
         for i in 0..<points.count {
             for j in (i + 1)..<points.count {
@@ -176,6 +196,50 @@ class ARViewController: UIViewController,ARSessionDelegate{
             }
         }
         return false
+    }
+    
+    func undoModel(){
+        guard !modelEntities.isEmpty && modelEntities.first != nil else {
+            print("No more entities to undo.")
+            return
+        }
+        
+        // Remove Point
+        let lastPoint = modelEntities.removeLast()
+        lastPoint.removeFromParent()
+        
+    
+        guard tapeEntities.count >= 2 else {
+            return
+        }
+        
+        // Remove Tape & Text
+        tapeEntities[(tapeEntities.count-2)...].forEach{ entity in
+            tapeEntities.removeLast()
+            entity.removeFromParent()
+        }
+        
+        guard meshEntity != nil || buttonEntity != nil else {
+            return
+        }
+        
+        buttonEntity?.removeFromParent()
+        meshEntity?.removeFromParent()
+        buttonEntity = nil
+        meshEntity = nil
+    }
+    
+    func resetModel(){
+        modelEntities.forEach{$0.removeFromParent()}
+        modelEntities = []
+        
+        tapeEntities.forEach{$0.removeFromParent()}
+        tapeEntities = []
+        
+        buttonEntity?.removeFromParent()
+        meshEntity?.removeFromParent()
+        buttonEntity = nil
+        meshEntity = nil
     }
     
     /// Draw Line using start & end position
@@ -201,6 +265,9 @@ class ARViewController: UIViewController,ARSessionDelegate{
         
         // Rotate the text to face upward (parallel to the floor)
         textEntity.orientation = simd_quatf(angle: .pi / 2, axis: SIMD3<Float>(-1, 0, 0))
+        
+        tapeEntities.append(lineEntity)
+        tapeEntities.append(textEntity)
         
         let anchor = AnchorEntity()
         anchor.addChild(lineEntity)
@@ -348,22 +415,20 @@ class ARViewController: UIViewController,ARSessionDelegate{
         material.emissiveIntensity = 3.0
         
         meshEntity?.model?.materials = [material]
+    }
+    
     func setupBillboard(for entity: Entity, in arView: ARView) {
-        // Ensure we're not retaining the entity or arView strongly to prevent memory leaks
         cancellable = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak arView, weak entity] event in
             guard let arView = arView, let entity = entity else { return }
 
-            // Get the current camera transform
             guard let cameraTransform = arView.session.currentFrame?.camera.transform else {
                 return
             }
 
-            // Calculate the direction from the entity to the camera
             let cameraPosition = SIMD3<Float>(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
             let entityPosition = entity.position(relativeTo: nil)
             let direction = normalize(cameraPosition - entityPosition)
 
-            // Update the entity's orientation to face the camera
             let up = SIMD3<Float>(0, 1, 0) // World up vector
             let right = normalize(cross(up, direction))
             let correctedUp = cross(direction, right)
@@ -386,9 +451,12 @@ class ARViewController: UIViewController,ARSessionDelegate{
     @objc func handleTap(_ sender: UITapGestureRecognizer) {
         let arView = sender.view as! ARView
         let location = sender.location(in: arView)
+        
+        guard materialManager != nil else { return }
+        
         if let tappedEntity = arView.entity(at: location) {
             if entityContainsName(tappedEntity, name: "buttonEntity") {
-                print("Button tapped!")
+                materialManager?.showSettings.toggle()
             }
         }
     }

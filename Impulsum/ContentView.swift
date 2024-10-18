@@ -11,25 +11,25 @@ import RealityKit
 struct ContentView : View {
     
     @EnvironmentObject var keyboardManager: KeyboardManager
-    
-    @State private var showSettings = false
+    @EnvironmentObject var materialManager: MaterialSelectionManager
     
     var body: some View {
         ZStack {
             ARViewContainer()
+                .environmentObject(materialManager)
                 .edgesIgnoringSafeArea(.all)
             
             VStack(spacing: 0) {                
                 Spacer()
                 
                 if !keyboardManager.isKeyboardVisible {
-                    TabBarView(showSettings: $showSettings)
+                    TabBarView(showSettings: $materialManager.showSettings)
                 }
             }
             
             VStack(spacing: 0) {
-                if showSettings {
-                    MaterialMenuView(showSettings: $showSettings)
+                if materialManager.showSettings {
+                    MaterialMenuView(showSettings: $materialManager.showSettings)
                 }
                 
                 Spacer()
@@ -47,4 +47,5 @@ struct ContentView : View {
 #Preview {
     ContentView()
         .environmentObject(KeyboardManager())
+        .environmentObject(MaterialSelectionManager())
 }
