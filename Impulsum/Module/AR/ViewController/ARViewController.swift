@@ -119,7 +119,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
         }
         
         let entity = ModelEntity(
-            mesh: MeshResource.generatePlane(width: 0.05, depth: 0.05, cornerRadius: 50),
+            mesh: MeshResource.generatePlane(width: 0.015, depth: 0.015, cornerRadius: 50),
             materials: [UnlitMaterial(color: .white)]
         )
         let focusTransform = focusEntity.transformMatrix(relativeTo: nil)
@@ -178,7 +178,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
         let vector = end - start
         let length = simd_length(vector)
         
-        let boxMesh = MeshResource.generateBox(size: [0.01, 0.01, length])
+        let boxMesh = MeshResource.generateBox(size: [0.002, 0.002, length])
         let material = UnlitMaterial(color: .white)
         let lineEntity = ModelEntity(mesh: boxMesh, materials: [material])
         
