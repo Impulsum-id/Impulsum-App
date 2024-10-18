@@ -10,6 +10,7 @@ import UIKit
 import SwiftUI
 
 struct ARViewContainer: UIViewControllerRepresentable {
+    @EnvironmentObject var materialManager: MaterialSelectionManager
     
     func updateUIViewController(_ uiViewController: ARViewController, context: Context) {
         
@@ -17,6 +18,8 @@ struct ARViewContainer: UIViewControllerRepresentable {
     
     func makeUIViewController(context: UIViewControllerRepresentableContext<ARViewContainer>) -> ARViewController {
         let viewController = ARViewController()
+        viewController.materialManager = materialManager
+        
         return viewController
     }
     
