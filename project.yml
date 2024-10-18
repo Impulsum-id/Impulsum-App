@@ -16,6 +16,7 @@ targets:
   Impulsum:
     type: application
     platform: iOS
+    deploymentTarget: "17.0"
     sources: [Impulsum]
     resources: [Resources]
     settings:
