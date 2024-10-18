@@ -63,7 +63,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
             )
         )
         
-        self.texture = loadTextureResource(named: "dummy_texture")
+        self.texture = loadTextureResource(named: "newcastle-perla")
         
         NotificationCenter.default.addObserver(forName: .placeModel, object: nil, queue: .main) { _ in
             self.placeModel(in: self.arView, focusEntity: self.focusEntity)
