@@ -100,7 +100,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
                 print("Updated tile width: \(width)")
             }
         }
-
+        
         NotificationCenter.default.addObserver(forName: .updateLength, object: nil, queue: .main) { [weak self] notification in
             if let length = notification.object as? Float {
                 self?.tileHeight = length
@@ -108,7 +108,7 @@ class ARViewController: UIViewController,ARSessionDelegate{
                 print("Updated tile height: \(length)")
             }
         }
-
+        
         NotificationCenter.default.addObserver(forName: .updateGrout, object: nil, queue: .main) { [weak self] notification in
             if let grout = notification.object as? Float {
                 self?.borderWidth = CGFloat(grout)
@@ -124,8 +124,8 @@ class ARViewController: UIViewController,ARSessionDelegate{
     /// on that object position to make the mesh
     func placeModel(in arView: ARView, focusEntity: FocusEntity?) {
         guard let focusEntity = focusEntity, self.meshEntity == nil else { return }
-        var isLockedEntity:ModelEntity?
-
+        var isLockedEntity: ModelEntity?
+        
         // Validate Lock Entity
         if let pivotModelEntity = modelEntities.first{
             let pivotModelPosition = pivotModelEntity.position(relativeTo: nil)
@@ -157,17 +157,17 @@ class ARViewController: UIViewController,ARSessionDelegate{
             
             drawLine(from: positionA, to: positionB, distance: distance(positionA, positionB))
         }
-                
+        
         // Draw Mesh
         let modelsPoints = self.modelEntities.map{$0.position(relativeTo: nil)}
-        if(isDrawable(in: modelsPoints)){
+        if(modelsPoints.first == modelsPoints.last){
             let newPoints: [SIMD3<Float>] =  modelsPoints.dropLast()
             
             let modelEntity = drawMesh(from: newPoints)
             
             // Draw Button
             let centroid = calculateCentroid(of: newPoints)
-            let buttonEntity = createButtonEntity(at: centroid)
+            let buttonEntity = createButtonEntity(at: centroid, in: arView)
             self.buttonEntity = buttonEntity
             
             // Append Mesh & Button to Anchor
@@ -182,22 +182,6 @@ class ARViewController: UIViewController,ARSessionDelegate{
         }
     }
     
-    /// Check For Duplicates
-    func isDrawable(in points: [SIMD3<Float>]) -> Bool{
-        return points.first == points.last
-    }
-    
-    func hasDuplicatePoints(in points: [SIMD3<Float>]) -> Bool {
-        for i in 0..<points.count {
-            for j in (i + 1)..<points.count {
-                if points[i] == points[j] {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-    
     func undoModel(){
         guard !modelEntities.isEmpty && modelEntities.first != nil else {
             print("No more entities to undo.")
@@ -208,7 +192,6 @@ class ARViewController: UIViewController,ARSessionDelegate{
         let lastPoint = modelEntities.removeLast()
         lastPoint.removeFromParent()
         
-    
         guard tapeEntities.count >= 2 else {
             return
         }
@@ -326,90 +309,6 @@ class ARViewController: UIViewController,ARSessionDelegate{
         return modelEntity
     }
     
-    func createButtonEntity(at position: SIMD3<Float>) -> ModelEntity {
-        let buttonSize: Float = 0.15 // Adjust size as needed
-        let buttonMesh = MeshResource.generatePlane(
-            width: buttonSize,
-            height: buttonSize,
-            cornerRadius: buttonSize / 2
-        )
-        
-        guard let iconImage = UIImage(named: "meshButton")?.cgImage else {
-            print("Failed to load icon image")
-            return ModelEntity()
-        }
-        
-        
-        do {
-            let texture = try TextureResource.generate(
-                from: iconImage,
-                options: TextureResource.CreateOptions(semantic: .color)
-            )
-            
-            var buttonMaterial = SimpleMaterial()
-            buttonMaterial.baseColor = MaterialColorParameter.texture(texture)
-            
-            let buttonEntity = ModelEntity(mesh: buttonMesh, materials: [buttonMaterial])
-            let rotation = simd_quatf(angle: -.pi / 2, axis: SIMD3<Float>(1, 0, 0))
-            buttonEntity.orientation = rotation
-            buttonEntity.position = SIMD3(x: position.x, y: position.y + 0.1, z: position.z + 0.1)
-            buttonEntity.name = "buttonEntity"
-            
-            buttonEntity.generateCollisionShapes(recursive: true)
-            
-            setupBillboard(for: buttonEntity, in: arView)
-            
-            return buttonEntity
-        } catch {
-            print("Failed to create texture resource: \(error)")
-            return ModelEntity()
-        }
-    }
-    
-    func loadTextureResource(named imageName: String, borderWidth: CGFloat = 2) -> TextureResource? {
-        guard let uiImage = UIImage(named: imageName),
-              let cgImage = uiImage.cgImage else {
-            print("Failed to load image: \(imageName)")
-            return nil
-        }
-        
-        
-        // Create a new image context with the desired size
-        let newImageWidth = CGFloat(cgImage.width) + borderWidth * 2.0
-        let newImageHeight = CGFloat(cgImage.height) + borderWidth * 2.0
-        let newImageSize = CGSize(width: newImageWidth, height: newImageHeight)
-        let newImageContext = CGContext(
-            data: nil,
-            width: Int(newImageWidth),
-            height: Int(newImageHeight),
-            bitsPerComponent: cgImage.bitsPerComponent,
-            bytesPerRow: 0, space: cgImage.colorSpace!,
-            bitmapInfo: cgImage.bitmapInfo.rawValue
-        )!
-
-        // Fill the new image context with the border color
-        newImageContext.setFillColor(UIColor.black.cgColor)
-        newImageContext.fill(CGRect(x: 0, y: 0, width: newImageWidth, height: newImageHeight))
-        
-        // Draw the original image centered in the new image context
-        let imageRect = CGRect(x: borderWidth, y: borderWidth, width: CGFloat(cgImage.width), height: CGFloat(cgImage.height))
-        newImageContext.draw(cgImage, in: imageRect)
-        
-        // Create a new CGImage from the new image context
-        if let newCGImage = newImageContext.makeImage() {
-            do {
-                let texture = try TextureResource.generate(from: newCGImage, options: .init(semantic: nil))
-                return texture
-            } catch {
-                print("Failed to create texture resource: \(error)")
-                return nil
-            }
-        } else {
-            print("Failed to create new CGImage")
-            return nil
-        }
-    }
-    
     func updateMeshTexture() {
         guard let newTexture = loadTextureResource(named: textureName, borderWidth: borderWidth) else {
             print("Failed to load texture: \(textureName)")
@@ -431,48 +330,16 @@ class ARViewController: UIViewController,ARSessionDelegate{
         meshEntity?.model?.materials = [material]
     }
     
-    func setupBillboard(for entity: Entity, in arView: ARView) {
-        cancellable = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak arView, weak entity] event in
-            guard let arView = arView, let entity = entity else { return }
-
-            guard let cameraTransform = arView.session.currentFrame?.camera.transform else {
-                return
-            }
-
-            let cameraPosition = SIMD3<Float>(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
-            let entityPosition = entity.position(relativeTo: nil)
-            let direction = normalize(cameraPosition - entityPosition)
-
-            let up = SIMD3<Float>(0, 1, 0) // World up vector
-            let right = normalize(cross(up, direction))
-            let correctedUp = cross(direction, right)
-            let rotationMatrix = float3x3(columns: (right, correctedUp, direction))
-            entity.orientation = simd_quatf(rotationMatrix)
-        }
-    }
-    
-    func entityContainsName(_ entity: Entity?, name: String) -> Bool {
-        var currentEntity = entity
-        while let entity = currentEntity {
-            if entity.name == name {
-                return true
-            }
-            currentEntity = entity.parent
-        }
-        return false
-    }
-    
     @objc func handleTap(_ sender: UITapGestureRecognizer) {
-        let arView = sender.view as! ARView
+        let arView = sender.view as? ARView
         let location = sender.location(in: arView)
         
         guard materialManager != nil else { return }
         
-        if let tappedEntity = arView.entity(at: location) {
+        if let tappedEntity = arView?.entity(at: location) {
             if entityContainsName(tappedEntity, name: "buttonEntity") {
                 materialManager?.showSettings.toggle()
             }
         }
     }
 }
-

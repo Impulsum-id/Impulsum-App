@@ -7,6 +7,10 @@
 
 import Foundation
 import simd
+import RealityFoundation
+import UIKit
+import RealityKit
+import Combine
 
 var defaultTimePickup: Date {
     var components = DateComponents()
@@ -124,10 +128,120 @@ func generateMesh(_ points: [SIMD3<Float>]) -> [UInt32] {
     return indices
 }
 
-
 func calculateCentroid(of points: [SIMD3<Float>]) -> SIMD3<Float> {
     let sum = points.reduce(SIMD3<Float>(0, 0, 0), +)
     return sum / Float(points.count)
 }
 
+func entityContainsName(_ entity: Entity?, name: String) -> Bool {
+    var currentEntity = entity
+    while let entity = currentEntity {
+        if entity.name == name {
+            return true
+        }
+        currentEntity = entity.parent
+    }
+    return false
+}
 
+func loadTextureResource(named imageName: String, borderWidth: CGFloat = 2) -> TextureResource? {
+    guard let uiImage = UIImage(named: imageName),
+          let cgImage = uiImage.cgImage else {
+        print("Failed to load image: \(imageName)")
+        return nil
+    }
+
+    // Create a new image context with the desired size
+    let newImageWidth = CGFloat(cgImage.width) + borderWidth * 2.0
+    let newImageHeight = CGFloat(cgImage.height) + borderWidth * 2.0
+    let newImageSize = CGSize(width: newImageWidth, height: newImageHeight)
+    let newImageContext = CGContext(
+        data: nil,
+        width: Int(newImageWidth),
+        height: Int(newImageHeight),
+        bitsPerComponent: cgImage.bitsPerComponent,
+        bytesPerRow: 0, space: cgImage.colorSpace!,
+        bitmapInfo: cgImage.bitmapInfo.rawValue
+    )!
+    
+    // Fill the new image context with the border color
+    newImageContext.setFillColor(UIColor.black.cgColor)
+    newImageContext.fill(CGRect(x: 0, y: 0, width: newImageWidth, height: newImageHeight))
+    
+    // Draw the original image centered in the new image context
+    let imageRect = CGRect(x: borderWidth, y: borderWidth, width: CGFloat(cgImage.width), height: CGFloat(cgImage.height))
+    newImageContext.draw(cgImage, in: imageRect)
+    
+    // Create a new CGImage from the new image context
+    if let newCGImage = newImageContext.makeImage() {
+        do {
+            let texture = try TextureResource.generate(from: newCGImage, options: .init(semantic: nil))
+            return texture
+        } catch {
+            print("Failed to create texture resource: \(error)")
+            return nil
+        }
+    } else {
+        print("Failed to create new CGImage")
+        return nil
+    }
+}
+
+func createButtonEntity(at position: SIMD3<Float>, in arView: ARView) -> ModelEntity {
+    let buttonSize: Float = 0.15 // Adjust size as needed
+    let buttonMesh = MeshResource.generatePlane(
+        width: buttonSize,
+        height: buttonSize,
+        cornerRadius: buttonSize / 2
+    )
+    
+    guard let iconImage = UIImage(named: "meshButton")?.cgImage else {
+        print("Failed to load icon image")
+        return ModelEntity()
+    }
+    
+    do {
+        let texture = try TextureResource.generate(
+            from: iconImage,
+            options: TextureResource.CreateOptions(semantic: .color)
+        )
+        
+        var buttonMaterial = SimpleMaterial()
+        buttonMaterial.baseColor = MaterialColorParameter.texture(texture)
+        
+        let buttonEntity = ModelEntity(mesh: buttonMesh, materials: [buttonMaterial])
+        let rotation = simd_quatf(angle: -.pi / 2, axis: SIMD3<Float>(1, 0, 0))
+        buttonEntity.orientation = rotation
+        buttonEntity.position = SIMD3(x: position.x, y: position.y + 0.1, z: position.z + 0.1)
+        buttonEntity.name = "buttonEntity"
+        
+        buttonEntity.generateCollisionShapes(recursive: true)
+        
+        setupBillboard(for: buttonEntity, in: arView)
+        
+        return buttonEntity
+    } catch {
+        print("Failed to create texture resource: \(error)")
+        return ModelEntity()
+    }
+}
+
+func setupBillboard(for entity: Entity, in arView: ARView) -> Cancellable {
+    return arView.scene.subscribe(to: SceneEvents.Update.self) { [weak arView, weak entity] event in
+        guard let arView = arView, let entity = entity else { return }
+        
+        guard let cameraTransform = arView.session.currentFrame?.camera.transform else {
+            return
+        }
+        
+        let cameraPosition = SIMD3<Float>(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
+        let entityPosition = entity.position(relativeTo: nil)
+        let direction = normalize(cameraPosition - entityPosition)
+        
+        let up = SIMD3<Float>(0, 1, 0) // World up vector
+        let right = normalize(cross(up, direction))
+        let correctedUp = cross(direction, right)
+        let rotationMatrix = float3x3(columns: (right, correctedUp, direction))
+        entity.orientation = simd_quatf(rotationMatrix)
+    }
+}
